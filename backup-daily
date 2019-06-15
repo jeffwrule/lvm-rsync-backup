@@ -8,15 +8,14 @@
 
 BACKUP_VOLUME=$1
 BACKUP_MOUNT=$2
-BACKUP_SIZE=$3
+SNAPSHOT_MOUNT_ROOT=$3
 BUFFER_SIZE=$4
  
 BACKUP_DEVICE="${BACKUP_VOLUME}"
-BACKUP_RW_MOUNT="${BACKUP_MOUNT}/${BACKUP_VOLUME}_rw"
-BACKUP_RO_MOUNT="${BACKUP_MOUNT}/${BACKUP_VOLUME}"
-SNAPSHOT_NAME="${BACKUP_VOLUME}_snapshot"
-SNAPSHOT_DEVICE="${SNAPSHOT_NAME}"
-SNAPSHOT_MOUNT="${BACKUP_MOUNT}/${SNAPSHOT_NAME}"
+SNAPSHOT_DEVICE="${BACKUP_VOLUME}_snapshot"
+SNAPSHOT_NAME="${SNAPSHOT_DEVICE##*/}"
+SNAPSHOT_MOUNT="${SNAPSHOT_MOUNT_ROOT}/${SNAPSHOT_NAME}"
+BACKUP_RW_MOUNT=$BACKUP_MOUNT
 
 ### First check everything was left cleanly last time, and fix if not
 #
@@ -60,10 +59,10 @@ lvcreate -L${BUFFER_SIZE} -s -n ${SNAPSHOT_NAME} ${BACKUP_VOLUME}
 # occurred over the length of time for which backups are kept.
 # It may therefore be necessary to extend the backup volume manually.
 #
-if [ ! -h ${BACKUP_DEVICE} ] ; then
-lvcreate -L${BACKUP_SIZE} -n ${BACKUP_VOLUME} backup
-mkfs.xfs /dev/backup/${BACKUP_VOLUME}
-fi
+#if [ ! -h ${BACKUP_DEVICE} ] ; then
+#lvcreate -L${BACKUP_SIZE} -n ${BACKUP_VOLUME} backup
+#mkfs.xfs /dev/backup/${BACKUP_VOLUME}
+#fi
 
 ### Create the backup mount directory if necessary
 #
@@ -85,7 +84,7 @@ chmod go-rwx ${SNAPSHOT_MOUNT}
 #
 mount -o nouuid,ro ${SNAPSHOT_DEVICE} ${SNAPSHOT_MOUNT}
 
-./make_backup_rw ${BACKUP_VOLUME} ${BACKUP_MOUNT} || exit 1
+#./make_backup_rw ${BACKUP_VOLUME} ${BACKUP_MOUNT} || exit 1
 
 ### Delete the oldest daily backup, if it exists
 #
@@ -118,20 +117,20 @@ touch ${BACKUP_RW_MOUNT}/daily.0 ;
 
 ### Attempt to unmount the RW mount point
 #
-umount ${BACKUP_RW_MOUNT}
-rmdir ${BACKUP_RW_MOUNT}
+#umount ${BACKUP_RW_MOUNT}
+#rmdir ${BACKUP_RW_MOUNT}
 
 ### Attempt to create the RO mount point
 #
 # This will only usually be necessary on the first run of this script.
 #
-if [ ! -d ${BACKUP_RO_MOUNT} ] ; then
-mkdir ${BACKUP_RO_MOUNT}
-fi
+#if [ ! -d ${BACKUP_RO_MOUNT} ] ; then
+#mkdir ${BACKUP_RO_MOUNT}
+#fi
 
 ### Attempt to mount the RO mount point
 #
-mount -o ro ${BACKUP_DEVICE} ${BACKUP_RO_MOUNT}
+#mount -o ro ${BACKUP_DEVICE} ${BACKUP_RO_MOUNT}
 
 ### Unmount the snapshot
 #
